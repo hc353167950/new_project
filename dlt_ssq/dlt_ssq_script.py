@@ -14,7 +14,7 @@ url_dlt = "http://zhong.china-ssq.net/dlt/latest"
 url_ssq = "http://zhong.china-ssq.net/ssq/latest"
 
 # CSV文件路径
-data_dir = "./data"  # 数据文件夹
+data_dir = "data"  # 数据文件夹
 csv_generated_dlt = os.path.join(data_dir, "generated_dlt.csv")
 csv_generated_ssq = os.path.join(data_dir, "generated_ssq.csv")
 
