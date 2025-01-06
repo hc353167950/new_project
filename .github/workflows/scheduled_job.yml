@@ -34,7 +34,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt  # 安装依赖
 
-      # 4. 运行脚本
+      # 4. 设置工作目录
+      - name: Set working directory
+        run: |
+          cd /home/runner/work/new_project/new_project
+
+      # 5. 运行脚本
       - name: Run script
         env:
           LAOHUANGLI_API_KEY: ${{ secrets.LAOHUANGLI_API_KEY }}  # 老黄历 API Key
@@ -45,7 +50,7 @@ jobs:
         run: |
           python message/main.py || exit 1  # 如果脚本失败，退出并标记工作流为失败
 
-      # 5. 提交更新的 CSV 文件并创建 Pull Request
+      # 6. 提交更新的 CSV 文件并创建 Pull Request
       - name: Commit updated CSV files
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub Token
