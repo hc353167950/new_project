@@ -1,6 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
 from collections import defaultdict
 import csv
 import random
@@ -8,19 +8,30 @@ from datetime import datetime, timedelta
 import os
 import time
 import re
+import logging
+
+# 配置日志
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # 大乐透和双色球的开奖数据网址
 url_dlt = "http://zhong.china-ssq.net/dlt/latest"
 url_ssq = "http://zhong.china-ssq.net/ssq/latest"
 
 # CSV文件路径
-data_dir = "data"  # 数据文件夹
+data_dir = os.path.join("message", "data")  # 数据文件夹
 csv_generated_dlt = os.path.join(data_dir, "generated_dlt.csv")
 csv_generated_ssq = os.path.join(data_dir, "generated_ssq.csv")
 
 
 # 根据年份生成文件路径
 def get_year_csv_path(base_filename, year):
+    """
+    根据基础文件名和年份生成 CSV 文件路径。
+    :param base_filename: 基础文件名（如 "dlt_results"）
+    :param year: 年份（如 2023）
+    :return: 完整的文件路径（如 "message/data/dlt_results_2023.csv"）
+    """
     return os.path.join(data_dir, f"{base_filename}_{year}.csv")
 
 
@@ -42,14 +53,15 @@ def ensure_csv_exists(filename, header):
 # 使用Selenium获取网页内容
 def fetch_html_with_selenium(url):
     # 设置Selenium选项
-    options = webdriver.ChromeOptions()
+    options = Options()
     options.add_argument("--headless")  # 无头模式
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
 
-    # 启动浏览器
-    service = Service(ChromeDriverManager().install())  # 自动管理并下载与浏览器匹配的驱动
+    # 手动指定 ChromeDriver 路径（GitHub Actions 中已安装）
+    chrome_driver_path = "/usr/local/bin/chromedriver"
+    service = Service(chrome_driver_path)
     driver = webdriver.Chrome(service=service, options=options)
     driver.get(url)
     time.sleep(3)  # 等待页面加载
@@ -185,7 +197,7 @@ def analyze_number_probability(data, front_range=(1, 35), back_range=(1, 12)):
     return front_prob, back_prob
 
 
-# 生成大乐透号码，确保红球和篮球都不重复，并且不与之前生成的号码重复
+# 生成大乐透号码
 def generate_dlt_numbers(front_prob, back_prob, generated_data, front_range=(1, 35), back_range=(1, 12)):
     # 读取已生成的大乐透号码
     existing_numbers = set()
@@ -219,7 +231,7 @@ def generate_dlt_numbers(front_prob, back_prob, generated_data, front_range=(1, 
         return generate_dlt_numbers(front_prob, back_prob, generated_data, front_range, back_range)  # 递归生成
 
 
-# 生成双色球号码，确保红球和篮球都不重复，并且不与之前生成的号码重复
+# 生成双色球号码
 def generate_ssq_numbers(front_prob, back_prob, generated_data, front_range=(1, 33), back_range=(1, 16)):
     # 读取已生成的双色球号码
     existing_numbers = set()
@@ -266,7 +278,7 @@ def save_generated_number(lottery_type, results):
             writer.writerow([lottery_type, ','.join(map(str, front)), ','.join(map(str, back))])
 
 
-# 判断CSV文件中是否已经存在今天、昨天或前天的数据（排除星期五）
+# 判断CSV文件中是否已经存在今天、昨天或前天的数据
 def has_recent_data(base_filename, target_year=None):
     # 如果没有指定年份，则使用当前年份
     if target_year is None:
@@ -306,7 +318,7 @@ def has_recent_data(base_filename, target_year=None):
     return False
 
 
-# 生成号码的函数，可以被其他地方调用
+# 生成号码的函数
 def generate_lottery_numbers(num_results=1, target_year=None):
     # 如果没有指定年份，则使用当前年份
     if target_year is None:
@@ -389,7 +401,7 @@ def generate_lottery_numbers(num_results=1, target_year=None):
     return "今天没有开奖活动！"
 
 
-# 处理返回结果，按按篮球号码排序
+# 处理返回结果，按篮球号码排序
 def default_result(int_data):
     initial = generate_lottery_numbers(int_data)
 

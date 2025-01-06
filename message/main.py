@@ -1,4 +1,5 @@
 import requests
+import os
 from message.almanac import get_laohuangli
 from message.dlt_ssq_script import default_result
 from message.weather import get_weather
@@ -59,8 +60,8 @@ def generate_daily_report():
 
 # 发送消息到微信群或单个用户（通过 WxPusher）
 def send_to_wechat(content, target_type, target_id):
-    # 替换为你的 WxPusher AppToken
-    app_token = "AT_M6s0l9nVAHVDAmg977dqIIDq2cpl2jVn"
+    # 从环境变量中获取 WxPusher AppToken
+    app_token = os.getenv('WXPUSHER_APP_TOKEN')
 
     # 构造消息体
     url = "https://wxpusher.zjiecode.com/api/send/message"
@@ -95,11 +96,8 @@ def send_to_wechat(content, target_type, target_id):
 daily_report = generate_daily_report()
 
 # 选择发送方式
-target_type = "topic"  # 可选值：`topic`（发送到群组）或 `uid`（发送到单个用户）
-target_id = "36910"  # 替换为你的 Topic ID 或 UID
-
-# target_type = "uid"  # 可选值：`topic`（发送到群组）或 `uid`（发送到单个用户）
-# target_id = "UID_bKFb5j6lj4q8Gzs3w2PhmBtLZ6VY"  # 替换为你的 Topic ID 或 UID
+target_type = os.getenv('WXPUSHER_TARGET_TYPE', 'topic')  # 默认发送到群组
+target_id = os.getenv('WXPUSHER_TARGET_ID')  # 从环境变量中获取 Topic ID 或 UID
 
 # 发送消息
 send_to_wechat(daily_report, target_type, target_id)
