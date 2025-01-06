@@ -43,7 +43,8 @@ jobs:
           WXPUSHER_TARGET_TYPE: ${{ secrets.WXPUSHER_TARGET_TYPE }}  # 目标类型（topic 或 uid）
           WXPUSHER_TARGET_ID: ${{ secrets.WXPUSHER_TARGET_ID }}      # 目标 ID（Topic ID 或 UID）
         run: |
-          python message/main.py || exit 1  # 如果脚本失败，退出并标记工作流为失败
+          cd $GITHUB_WORKSPACE  # 切换到工作目录
+          python message/main.py || exit 1  # 运行 Python 脚本
 
       # 5. 提交更新的 CSV 文件并创建 Pull Request
       - name: Commit updated CSV files

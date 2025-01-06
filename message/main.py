@@ -1,9 +1,16 @@
-import requests
+import sys
 import os
+import requests
+
+# 将项目根目录添加到 sys.path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
 from message.almanac import get_laohuangli
 from message.dlt_ssq_script import default_result
 from message.weather import get_weather
 from datetime import datetime
+
 
 # 获取当前日期
 today_date = datetime.now().strftime('%Y-%m-%d')
