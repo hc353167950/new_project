@@ -1,11 +1,19 @@
 import requests
+import os
+from datetime import datetime
+
+# 从环境变量中获取 API Key
+apiKey = os.getenv('LAOHUANGLI_API_KEY')
 
 # 基本参数配置
 apiUrl = 'http://v.juhe.cn/laohuangli/d'  # 接口请求URL
-apiKey = '24ef546484277f42adada4c55cea3274'  # 在个人中心->我的数据,接口名称上方查看
 
 
-def get_laohuangli(date='2025-01-06'):
+def get_laohuangli(date=None):
+    # 如果没有传入日期，则使用当天日期
+    if date is None:
+        date = datetime.now().strftime('%Y-%m-%d')
+
     # 接口请求入参配置
     requestParams = {
         'key': apiKey,

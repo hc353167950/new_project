@@ -1,7 +1,8 @@
 import requests
+import os
 
-# API Key（明文）
-apiKey = 'ca1c8cfffe12b57d7e74cd99930aa366'
+# 从环境变量中获取 API Key
+apiKey = os.getenv('WEATHER_API_KEY')
 
 
 def get_weather(city=None):
