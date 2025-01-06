@@ -28,26 +28,28 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt  # 安装依赖
 
-      # 4. 安装 Chrome 和 ChromeDriver
+      # 4. 安装 Chrome 和 ChromeDriver（使用固定版本号）
       - name: Set up Chrome and ChromeDriver
         run: |
           sudo apt-get update
           sudo apt-get install -y wget unzip
+
+          # 安装指定版本的 Chrome
+          CHROME_VERSION="131.0.6778.204"  # 替换为已知的 Chrome 版本号
           wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
           echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
           sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
+          sudo apt-get install -y google-chrome-stable=$CHROME_VERSION
 
-          # 获取 Chrome 版本号
-          CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
-
-          # 获取对应的 ChromeDriver 版本号
-          CHROMEDRIVER_VERSION=$(curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION%.*})
-
-          # 下载并安装 ChromeDriver
+          # 安装指定版本的 ChromeDriver
+          CHROMEDRIVER_VERSION="131.0.6778.204"  # 替换为已知的 ChromeDriver 版本号
           wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip
           sudo unzip /tmp/chromedriver.zip -d /usr/local/bin/
           sudo chmod +x /usr/local/bin/chromedriver
+
+          # 验证 Chrome 和 ChromeDriver 版本
+          echo "Chrome version: $(google-chrome --version)"
+          echo "ChromeDriver version: $(chromedriver --version)"
 
       # 5. 运行脚本
       - name: Run script
