@@ -52,10 +52,19 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 清理未跟踪的文件（例如 __pycache__）
+          git clean -f -d
+
+          # 添加和提交 CSV 文件
           git add message/data/
           git commit -m "Update CSV files"
+
+          # 拉取远程分支并合并
           git fetch origin automated-updates
           git merge origin/automated-updates --allow-unrelated-histories
+
+          # 推送到远程分支
           git push origin HEAD:automated-updates
 
       - name: Create Pull Request
