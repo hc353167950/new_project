@@ -4,8 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d9fd5859-e65f-4bfa-8b36-a756eb439917" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.github/workflows/scheduled_job.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/scheduled_job.yml" afterDir="false" />
+    <list default="true" id="d9fd5859-e65f-4bfa-8b36-a756eb439917" name="Changes" comment="修改yml文件">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -208,7 +207,14 @@
       <option name="project" value="LOCAL" />
       <updated>1736170991261</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="修改yml文件">
+      <created>1736171876330</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1736171876330</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -225,6 +231,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="更新" />
     <MESSAGE value="Add GitHub Actions workflow" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add GitHub Actions workflow" />
+    <MESSAGE value="修改yml文件" />
+    <option name="LAST_COMMIT_MESSAGE" value="修改yml文件" />
   </component>
 </project>
