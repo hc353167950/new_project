@@ -58,14 +58,16 @@ def fetch_html_with_selenium(url):
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-
-    # 手动指定 ChromeDriver 路径（GitHub Actions 中已安装）
-    chrome_driver_path = "/usr/local/bin/chromedriver"
-    service = Service(chrome_driver_path)
-    driver = webdriver.Chrome(service=service, options=options)
+    # 使用远程 WebDriver 连接到 Selenium Docker 容器
+    driver = webdriver.Remote(
+        command_executor='http://localhost:4444/wd/hub',  # Selenium 远程 URL
+        options=options
+    )
+    # 访问目标网页
     driver.get(url)
     time.sleep(3)  # 等待页面加载
     html = driver.page_source
+    # 关闭浏览器
     driver.quit()
     return html
 

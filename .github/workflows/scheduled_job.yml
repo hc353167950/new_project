@@ -9,6 +9,12 @@ jobs:
   run-script:
     runs-on: ubuntu-latest  # 使用最新的 Ubuntu 环境
 
+    services:
+      selenium:
+        image: selenium/standalone-chrome  # 使用 Selenium 的 Chrome 镜像
+        ports:
+          - 4444:4444  # 将容器的 4444 端口映射到主机的 4444 端口
+
     steps:
       # 1. 拉取代码
       - name: Checkout code
@@ -28,30 +34,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt  # 安装依赖
 
-      # 4. 安装 Chrome 和 ChromeDriver（使用固定版本号）
-      - name: Set up Chrome and ChromeDriver
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip
-
-          # 安装指定版本的 Chrome
-          CHROME_VERSION="131.0.6778.204"  # 替换为已知的 Chrome 版本号
-          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-          echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable=$CHROME_VERSION
-
-          # 安装指定版本的 ChromeDriver
-          CHROMEDRIVER_VERSION="131.0.6778.204"  # 替换为已知的 ChromeDriver 版本号
-          wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip
-          sudo unzip /tmp/chromedriver.zip -d /usr/local/bin/
-          sudo chmod +x /usr/local/bin/chromedriver
-
-          # 验证 Chrome 和 ChromeDriver 版本
-          echo "Chrome version: $(google-chrome --version)"
-          echo "ChromeDriver version: $(chromedriver --version)"
-
-      # 5. 运行脚本
+      # 4. 运行脚本
       - name: Run script
         env:
           LAOHUANGLI_API_KEY: ${{ secrets.LAOHUANGLI_API_KEY }}  # 老黄历 API Key
@@ -62,7 +45,7 @@ jobs:
         run: |
           python message/main.py || exit 1  # 如果脚本失败，退出并标记工作流为失败
 
-      # 6. 提交更新的 CSV 文件并创建 Pull Request
+      # 5. 提交更新的 CSV 文件并创建 Pull Request
       - name: Commit updated CSV files
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub Token
