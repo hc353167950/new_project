@@ -1,3 +1,4 @@
 lxml==5.3.0
 Requests==2.32.3
 selenium==4.27.1
+webdriver_manager==4.0.2
