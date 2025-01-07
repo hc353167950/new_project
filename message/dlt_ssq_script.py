@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 from collections import defaultdict
 import csv
 import random
@@ -58,11 +59,7 @@ def fetch_html_with_selenium(url):
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    # 使用远程 WebDriver 连接到 Selenium Docker 容器
-    driver = webdriver.Remote(
-        command_executor='http://localhost:4444/wd/hub',  # Selenium 远程 URL
-        options=options
-    )
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     # 访问目标网页
     driver.get(url)
     time.sleep(3)  # 等待页面加载

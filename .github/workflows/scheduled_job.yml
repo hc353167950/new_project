@@ -52,12 +52,11 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 清理未跟踪的文件（例如 __pycache__）
-          git clean -f -d
+          git clean -f -d message/data/  # 仅清理 data 目录中的未跟踪文件
 
           # 添加和提交 CSV 文件
           git add message/data/
-          git commit -m "Automated CSV file update"
+          git commit -m "Automated CSV file update [skip ci]"  # [skip ci] 避免触发新的 CI 运行
 
           # 直接推送到 master 分支
           git push origin master
