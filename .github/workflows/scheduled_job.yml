@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          
+          pip install -r requirements.txt  # 安装依赖
 
       # 4. 运行脚本（支持重试）
       - name: Run script with retries
@@ -81,7 +81,7 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{
               "appToken": "'"$WXPUSHER_APP_TOKEN"'",
-              "content": "Daily Report Automation 脚本执行失败，请检查日志。",
+              "content": "Git Daily Report Automation 脚本执行失败，请检查日志。",
               "contentType": 1,
               "uids": ["'"$WXPUSHER_UID"'"]
             }' \
