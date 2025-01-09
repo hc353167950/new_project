@@ -14,26 +14,30 @@ jobs:
       contents: write  # 允许推送到仓库
 
     steps:
-      # 1. 拉取代码
+      # 1. 拉取代码（支持重试）
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           ref: master  # 明确指定拉取 master 分支
+        retries: 3  # 如果失败，最多重试 3 次
 
-      # 2. 设置 Python 环境
+      # 2. 设置 Python 环境（支持重试）
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'  # 指定 Python 版本
+        retries: 3  # 如果失败，最多重试 3 次
 
-      # 3. 安装依赖
+      # 3. 安装依赖（支持重试）
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt  # 安装依赖
+        retries: 3  # 如果失败，最多重试 3 次
 
-      # 4. 运行脚本
+      # 4. 运行脚本（支持重试）
       - name: Run script
+        id: run-script  # 为步骤添加 ID，便于后续判断状态
         env:
           LAOHUANGLI_API_KEY: ${{ secrets.LAOHUANGLI_API_KEY }}  # 老黄历 API Key
           WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}        # 天气 API Key
@@ -43,9 +47,11 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE  # 切换到工作目录
           python message/main.py || exit 1  # 运行 Python 脚本
+        retries: 3  # 如果失败，最多重试 3 次
 
       # 5. 提交更新的 CSV 文件并直接推送到 master 分支
       - name: Commit and push changes to master
+        if: steps.run-script.outcome == 'success'  # 仅在脚本成功时执行
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GITHUB_TOKEN
         run: |
