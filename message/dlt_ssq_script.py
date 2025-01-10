@@ -61,7 +61,9 @@ def fetch_and_parse_lottery(url, lottery_type):
     try:
         # 发送请求
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Referer": "https://static.sporttery.cn/",
+            "X-Forwarded-For": "47.95.47.253"
         }
         response = requests.get(url, headers=headers)
         response.raise_for_status()  # 检查请求是否成功
@@ -101,7 +103,8 @@ def fetch_and_parse_ssq(url):
     try:
         # 发送请求
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "X-Forwarded-For": "47.95.47.253"
         }
         response = requests.get(url, headers=headers)
         response.raise_for_status()  # 检查请求是否成功
