@@ -31,14 +31,29 @@ def generate_daily_report():
     report = f"<h2>📅 今日时间：{today_date}</h2>"
 
     # 第二行：彩票结果
-    report += "<h3>🎰 已为您生成今日份5注幸运彩票：</h3>"
-    if result_lotto and isinstance(result_lotto, list):  # 检查是否有彩票数据
-        report += "<pre>"
-        for lotto in result_lotto:
-            report += f"{lotto}\n"  # 每注彩票换行
-        report += "</pre>"
+    if result_lotto:  # 检查是否有彩票数据
+        # 将彩票结果按类型分组
+        lottery_data = {}
+        if isinstance(result_lotto, str):  # 如果返回的是字符串（如“今天没有开奖活动！”）
+            report += f"<h3>🎰 彩票结果：</h3>"
+            report += f"<pre>{result_lotto}</pre>"
+        else:  # 如果返回的是彩票数据
+            for lotto in result_lotto:
+                # 提取彩票类型（如“大乐透”或“双色球”）
+                lottery_type = lotto.split(" - ")[0]
+                if lottery_type not in lottery_data:
+                    lottery_data[lottery_type] = []
+                lottery_data[lottery_type].append(lotto)
+
+            # 为每种彩票类型生成标题和内容
+            for lottery_type, data in lottery_data.items():
+                report += f"<h3>🎰 已为您生成今日份 {lottery_type} 5注：</h3>"
+                report += "<pre>"
+                for item in data:
+                    report += f"{item}\n"  # 每注彩票换行
+                report += "</pre>"
     else:
-        report += f"<pre>{result_lotto}</pre>"  # 如果没有彩票数据，直接展示返回的内容
+        report += "<h3>🎰 今日无彩票数据</h3>"
 
     # 第三行：天气结果
     if result_weather:  # 检查是否有天气数据

@@ -60,14 +60,18 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          git clean -f -d message/data/  # 仅清理 data 目录中的未跟踪文件
+          # 清理未跟踪的文件
+          git clean -f -d message/data/
 
-          # 添加和提交 CSV 文件
-          git add message/data/
-          git commit -m "Automated CSV file update [skip ci]"  # [skip ci] 避免触发新的 CI 运行
-
-          # 直接推送到 master 分支
-          git push origin master
+          # 检查是否有 CSV 文件的更改
+          if git diff --quiet --exit-code message/data/; then
+            echo "没有需要提交的更改。"
+          else
+            # 添加和提交 CSV 文件
+            git add message/data/
+            git commit -m "Automated CSV file update [skip ci]"  # [skip ci] 避免触发新的 CI 运行
+            git push origin master
+          fi
 
       # 6. 如果脚本执行失败，通过 UID 发送推送通知
       - name: Send failure notification via UID
