@@ -5,7 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d9fd5859-e65f-4bfa-8b36-a756eb439917" name="Changes" comment="修改yml文件">
-      <change beforePath="$PROJECT_DIR$/message/dlt_ssq_script.py" beforeDir="false" afterPath="$PROJECT_DIR$/message/dlt_ssq_script.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
