@@ -34,15 +34,30 @@ def generate_daily_report():
     if result_lotto:  # 检查是否有彩票数据
         # 将彩票结果按类型分组
         lottery_data = {}
-        for lotto in result_lotto:
-            # 提取彩票类型（如“双色球”、“大乐透”、“七星彩”）
-            if " - " in lotto:  # 确保数据包含分隔符
-                lottery_type = lotto.split(" - ")[0]  # 提取彩票类型
-                if lottery_type not in lottery_data:
-                    lottery_data[lottery_type] = []
-                lottery_data[lottery_type].append(lotto)
-            else:
-                print(f"数据格式错误：{lotto}")  # 打印格式错误的数据
+        if isinstance(result_lotto, str):  # 如果返回的是字符串
+            # 按行拆分彩票结果
+            result_lines = result_lotto.split("\n")
+            for lotto in result_lines:
+                # 提取彩票类型（如“双色球”、“大乐透”、“七星彩”）
+                if " - " in lotto:  # 确保数据包含分隔符
+                    lottery_type = lotto.split(" - ")[0]  # 提取彩票类型
+                    if lottery_type not in lottery_data:
+                        lottery_data[lottery_type] = []
+                    lottery_data[lottery_type].append(lotto)
+                else:
+                    print(f"数据格式错误：{lotto}")  # 打印格式错误的数据
+        elif isinstance(result_lotto, list):  # 如果返回的是列表
+            for lotto in result_lotto:
+                # 提取彩票类型（如“双色球”、“大乐透”、“七星彩”）
+                if " - " in lotto:  # 确保数据包含分隔符
+                    lottery_type = lotto.split(" - ")[0]  # 提取彩票类型
+                    if lottery_type not in lottery_data:
+                        lottery_data[lottery_type] = []
+                    lottery_data[lottery_type].append(lotto)
+                else:
+                    print(f"数据格式错误：{lotto}")  # 打印格式错误的数据
+        else:
+            print(f"未知的彩票结果格式：{type(result_lotto)}")
 
         # 为每种彩票类型生成标题和内容
         if lottery_data:  # 检查是否有彩票数据
@@ -125,3 +140,4 @@ target_id = os.getenv('WXPUSHER_TARGET_ID')  # 从环境变量中获取 Topic ID
 
 # 发送消息
 send_to_wechat(daily_report, target_type, target_id)
+
