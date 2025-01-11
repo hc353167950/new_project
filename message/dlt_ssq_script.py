@@ -494,10 +494,9 @@ def generate_lottery_numbers(num_results=1, target_year=None):
     formatted_results = []
     for lottery_type, front, back in results:
         if lottery_type == "七星彩":
-            formatted_results.append(f"{lottery_type} - 前区：{', '.join(map(str, front))}   后区：{back}")
+            formatted_results.append(f"{lottery_type} - 前：{', '.join(map(str, front))}  后：{back}")
         else:
-            formatted_results.append(f"{lottery_type} - 红球：{', '.join(map(str, front))}   篮球：{', '.join(map(str, back))}")
-
+            formatted_results.append(f"{lottery_type} - 红：{', '.join(map(str, front))}  蓝：{', '.join(map(str, back))}")
     return "\n".join(formatted_results)
 
 
@@ -506,7 +505,7 @@ def default_result(int_data):
 
     # 判断是否是星期五的特殊提示
 
-    if initial == "今天双色球和大乐透都不开奖噢！" or initial == "今天没有开奖活动！":
+    if initial == "今天没有开奖活动！":
         return initial  # 直接返回提示信息，不进行排序
 
     # 将结果拆分为多组，并按照篮球号码排序
