@@ -3,10 +3,8 @@ import csv
 import random
 from datetime import datetime, timedelta
 import os
-import time
 import logging
 import requests
-import json
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -224,33 +222,40 @@ def generate_dlt_numbers(front_prob, back_prob, generated_data, front_range=(1, 
     # 读取已生成的大乐透号码
     existing_numbers = set()
     for row in generated_data:
-        front = tuple(map(int, row[1].split(',')))  # 红球
-        back = tuple(map(int, row[2].split(',')))  # 篮球
-        existing_numbers.add((front, back))  # 将红球和篮球组合作为唯一标识
+        try:
+            if len(row) < 3:
+                raise ValueError(f"数据格式错误：行数据不足 3 个元素，当前行：{row}")
+            front = tuple(row[1].split(','))  # 红球（保留字符串格式）
+            back = tuple(row[2].split(','))   # 篮球（保留字符串格式）
+            existing_numbers.add((front, back))
+        except (IndexError, ValueError) as e:
+            print(f"数据解析错误：{row}，错误信息：{e}")
+            continue  # 跳过错误数据，继续处理下一行
 
+    # 生成新号码的逻辑
     while True:
-        # 生成红球号码，根据概率分布
         front_numbers = list(front_prob.keys())
         front_weights = list(front_prob.values())
-        front = random.choices(front_numbers, weights=front_weights, k=5)  # 使用概率分布生成号码
-        front = sorted(list(set(front)))  # 去重并排序
-        if len(front) == 5:  # 确保生成了5个不重复的号码
+        front = random.choices(front_numbers, weights=front_weights, k=5)
+        front = sorted(list(set(front)))
+        if len(front) == 5:
+            front = [f"{num:02d}" for num in front]  # 确保是两位数格式
             break
 
     while True:
-        # 生成篮球号码，根据概率分布
         back_numbers = list(back_prob.keys())
         back_weights = list(back_prob.values())
-        back = random.choices(back_numbers, weights=back_weights, k=2)  # 使用概率分布生成号码
-        back = sorted(list(set(back)))  # 去重并排序
-        if len(back) == 2:  # 确保生成了2个不重复的号码
+        back = random.choices(back_numbers, weights=back_weights, k=2)
+        back = sorted(list(set(back)))
+        if len(back) == 2:
+            back = [f"{num:02d}" for num in back]  # 确保是两位数格式
             break
 
     # 检查是否与已生成的号码重复
     if (tuple(front), tuple(back)) not in existing_numbers:
         return front, back
     else:
-        return generate_dlt_numbers(front_prob, back_prob, generated_data, front_range, back_range)  # 递归生成
+        return generate_dlt_numbers(front_prob, back_prob, generated_data, front_range, back_range)
 
 
 # 生成双色球号码
@@ -258,33 +263,40 @@ def generate_ssq_numbers(front_prob, back_prob, generated_data, front_range=(1, 
     # 读取已生成的双色球号码
     existing_numbers = set()
     for row in generated_data:
-        front = tuple(map(int, row[1].split(',')))  # 红球
-        back = tuple(map(int, row[2].split(',')))  # 篮球
-        existing_numbers.add((front, back))  # 将红球和篮球组合作为唯一标识
+        try:
+            if len(row) < 3:
+                raise ValueError(f"数据格式错误：行数据不足 3 个元素，当前行：{row}")
+            front = tuple(row[1].split(','))  # 红球（保留字符串格式）
+            back = tuple(row[2].split(','))   # 篮球（保留字符串格式）
+            existing_numbers.add((front, back))
+        except (IndexError, ValueError) as e:
+            print(f"数据解析错误：{row}，错误信息：{e}")
+            continue  # 跳过错误数据，继续处理下一行
 
+    # 生成新号码的逻辑
     while True:
-        # 生成红球号码，根据概率分布
         front_numbers = list(front_prob.keys())
         front_weights = list(front_prob.values())
-        front = random.choices(front_numbers, weights=front_weights, k=6)  # 使用概率分布生成号码
-        front = sorted(list(set(front)))  # 去重并排序
-        if len(front) == 6:  # 确保生成了6个不重复的号码
+        front = random.choices(front_numbers, weights=front_weights, k=6)
+        front = sorted(list(set(front)))
+        if len(front) == 6:
+            front = [f"{num:02d}" for num in front]  # 确保是两位数格式
             break
 
     while True:
-        # 生成篮球号码，根据概率分布
         back_numbers = list(back_prob.keys())
         back_weights = list(back_prob.values())
-        back = random.choices(back_numbers, weights=back_weights, k=1)  # 使用概率分布生成号码
-        back = sorted(list(set(back)))  # 去重并排序
-        if len(back) == 1:  # 确保生成了1个不重复的号码
+        back = random.choices(back_numbers, weights=back_weights, k=1)
+        back = sorted(list(set(back)))
+        if len(back) == 1:
+            back = [f"{num:02d}" for num in back]  # 确保是两位数格式
             break
 
     # 检查是否与已生成的号码重复
     if (tuple(front), tuple(back)) not in existing_numbers:
         return front, back
     else:
-        return generate_ssq_numbers(front_prob, back_prob, generated_data, front_range, back_range)  # 递归生成
+        return generate_ssq_numbers(front_prob, back_prob, generated_data, front_range, back_range)
 
 
 # 生成七星彩号码（基于概率分布，允许前区重复）
@@ -292,26 +304,31 @@ def generate_qxc_numbers(front_prob, back_prob, generated_data):
     # 读取已生成的七星彩号码
     existing_numbers = set()
     for row in generated_data:
-        front = tuple(map(int, row[1].split(',')))  # 前区
-        back = int(row[2])  # 后区
-        existing_numbers.add((front, back))  # 将前区和后区组合作为唯一标识
+        try:
+            if len(row) < 3:
+                raise ValueError(f"数据格式错误：行数据不足 3 个元素，当前行：{row}")
+            front = tuple(map(int, row[1].split(',')))  # 前区
+            back = int(row[2])  # 后区
+            existing_numbers.add((front, back))
+        except (IndexError, ValueError) as e:
+            print(f"数据解析错误：{row}，错误信息：{e}")
+            continue  # 跳过错误数据，继续处理下一行
 
+    # 生成新号码的逻辑
     while True:
-        # 生成前区号码，根据概率分布，允许重复
         front_numbers = list(front_prob.keys())
         front_weights = list(front_prob.values())
-        front = random.choices(front_numbers, weights=front_weights, k=6)  # 使用概率分布生成号码
+        front = random.choices(front_numbers, weights=front_weights, k=6)
         front = tuple(front)  # 转换为元组以便去重检查
 
-        # 生成后区号码，根据概率分布
         back_numbers = list(back_prob.keys())
         back_weights = list(back_prob.values())
-        back = random.choices(back_numbers, weights=back_weights, k=1)  # 使用概率分布生成号码
+        back = random.choices(back_numbers, weights=back_weights, k=1)
         back = back[0]  # 取第一个元素
 
         # 检查是否与已生成的号码重复
         if (front, back) not in existing_numbers:
-            return list(front), back  # 返回前区列表和后区号码
+            return list(front), back
 
 
 def save_generated_number(lottery_type, results):
@@ -504,7 +521,6 @@ def default_result(int_data):
     initial = generate_lottery_numbers(int_data)
 
     # 判断是否是星期五的特殊提示
-
     if initial == "今天没有开奖活动！":
         return initial  # 直接返回提示信息，不进行排序
 
