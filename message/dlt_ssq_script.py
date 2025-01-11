@@ -505,13 +505,14 @@ def default_result(int_data):
     initial = generate_lottery_numbers(int_data)
 
     # 判断是否是星期五的特殊提示
-    if initial == "今天没有开奖活动！":
+
+    if initial == "今天双色球和大乐透都不开奖噢！" or initial == "今天没有开奖活动！":
         return initial  # 直接返回提示信息，不进行排序
 
-    # 将结果拆分为多组，并按照后区号码排序
+    # 将结果拆分为多组，并按照篮球号码排序
     result_lines = initial.split("\n")  # 将结果按行拆分
     try:
-        result_lines.sort(key=lambda x: int(x.split("篮球：")[1].split(",")[0]) if "篮球：" in x else int(x.split("后区：")[1]))
+        result_lines.sort(key=lambda x: int(x.split("篮球：")[1].split(",")[0]))
     except (IndexError, ValueError) as e:
         # 如果排序失败（例如数据格式不正确），直接返回原始结果
         return initial
