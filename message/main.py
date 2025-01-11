@@ -34,24 +34,26 @@ def generate_daily_report():
     if result_lotto:  # 检查是否有彩票数据
         # 将彩票结果按类型分组
         lottery_data = {}
-        if isinstance(result_lotto, str):  # 如果返回的是字符串（如“今天没有开奖活动！”）
-            report += f"<h3>🎰 彩票结果：</h3>"
-            report += f"<pre>{result_lotto}</pre>"
-        else:  # 如果返回的是彩票数据
-            for lotto in result_lotto:
-                # 提取彩票类型（如“大乐透”或“双色球”）
-                lottery_type = lotto.split(" - ")[0]
+        for lotto in result_lotto:
+            # 提取彩票类型（如“双色球”、“大乐透”、“七星彩”）
+            if " - " in lotto:  # 确保数据包含分隔符
+                lottery_type = lotto.split(" - ")[0]  # 提取彩票类型
                 if lottery_type not in lottery_data:
                     lottery_data[lottery_type] = []
                 lottery_data[lottery_type].append(lotto)
+            else:
+                print(f"数据格式错误：{lotto}")  # 打印格式错误的数据
 
-            # 为每种彩票类型生成标题和内容
+        # 为每种彩票类型生成标题和内容
+        if lottery_data:  # 检查是否有彩票数据
             for lottery_type, data in lottery_data.items():
                 report += f"<h3>🎰 已为您生成今日份 {lottery_type} 5注：</h3>"
                 report += "<pre>"
                 for item in data:
                     report += f"{item}\n"  # 每注彩票换行
                 report += "</pre>"
+        else:
+            report += "<h3>🎰 今日无彩票数据</h3>"
     else:
         report += "<h3>🎰 今日无彩票数据</h3>"
 
