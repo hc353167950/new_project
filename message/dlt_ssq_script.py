@@ -222,6 +222,8 @@ def generate_dlt_numbers(front_prob, back_prob, generated_data, front_range=(1, 
     # 读取已生成的大乐透号码
     existing_numbers = set()
     for row in generated_data:
+        if not row:  # 跳过空行
+            continue
         try:
             if len(row) < 3:
                 raise ValueError(f"数据格式错误：行数据不足 3 个元素，当前行：{row}")
@@ -263,6 +265,8 @@ def generate_ssq_numbers(front_prob, back_prob, generated_data, front_range=(1, 
     # 读取已生成的双色球号码
     existing_numbers = set()
     for row in generated_data:
+        if not row:  # 跳过空行
+            continue
         try:
             if len(row) < 3:
                 raise ValueError(f"数据格式错误：行数据不足 3 个元素，当前行：{row}")
@@ -304,6 +308,8 @@ def generate_qxc_numbers(front_prob, back_prob, generated_data):
     # 读取已生成的七星彩号码
     existing_numbers = set()
     for row in generated_data:
+        if not row:  # 跳过空行
+            continue
         try:
             if len(row) < 3:
                 raise ValueError(f"数据格式错误：行数据不足 3 个元素，当前行：{row}")
