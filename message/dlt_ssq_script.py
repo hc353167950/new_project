@@ -401,6 +401,10 @@ def has_recent_data(base_filename, target_year=None):
         reader = csv.reader(file)
         next(reader)  # 跳过表头
         for row in reader:
+            # 检查 row 是否有足够的字段
+            if len(row) < 2:
+                logger.warning(f"跳过不完整的行: {row}")
+                continue
             if row[1] in dates_to_check:  # 检查日期是否为需要检查的日期
                 return True
     return False
@@ -541,5 +545,3 @@ def default_result(int_data):
     # 重新组合为字符串
     result = "\n".join(result_lines)
     return result
-
-

@@ -141,3 +141,4 @@ target_id = os.getenv('WXPUSHER_TARGET_ID')  # 从环境变量中获取 Topic ID
 # 发送消息
 send_to_wechat(daily_report, target_type, target_id)
 
+
