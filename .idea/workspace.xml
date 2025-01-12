@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="d9fd5859-e65f-4bfa-8b36-a756eb439917" name="Changes" comment="修改yml文件">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/message/data/generated_dlt.csv" beforeDir="false" afterPath="$PROJECT_DIR$/message/data/generated_dlt.csv" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/message/dlt_ssq_script.py" beforeDir="false" afterPath="$PROJECT_DIR$/message/dlt_ssq_script.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -41,6 +42,7 @@
   &quot;keyToString&quot;: {
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/git_branch/script&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   },
   &quot;keyToStringList&quot;: {
