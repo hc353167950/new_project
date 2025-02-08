@@ -194,56 +194,147 @@ def get_recent_30_data(base_filename, target_year):
 
 # 分析号码概率
 def analyze_number_probability(data, front_range=(1, 35), back_range=(1, 12)):
-    decay_factor = 0.95  # 每往过去一期衰减5%
-    weights = [decay_factor ** i for i in reversed(range(len(data)))]
+    # 初始化前区和后区号码的计数器
+    front_counter = {num: 0 for num in range(front_range[0], front_range[1] + 1)}
+    back_counter = {num: 0 for num in range(back_range[0], back_range[1] + 1)}
 
-    front_counter = defaultdict(float)
-    back_counter = defaultdict(float)
+    # 统计历史数据中号码的出现次数
+    front_numbers = [int(num) for draw in data for num in draw[2:-2] if front_range[0] <= int(num) <= front_range[1]]
+    back_numbers = [int(num) for draw in data for num in draw[-2:] if back_range[0] <= int(num) <= back_range[1]]
 
-    # 带权重的计数
-    for idx, draw in enumerate(data):
-        weight = weights[idx]
-        for num in map(int, draw[2:-2]):
-            if front_range[0] <= num <= front_range[1]:
-                front_counter[num] += weight
-        for num in map(int, draw[-2:]):
-            if back_range[0] <= num <= back_range[1]:
-                back_counter[num] += weight
+    for num in front_numbers:
+        front_counter[num] += 1
+    for num in back_numbers:
+        back_counter[num] += 1
 
-    # 添加基础概率防止零概率
-    min_prob = 0.001
-    for num in range(front_range[0], front_range[1] + 1):
-        front_counter[num] = max(front_counter.get(num, 0), min_prob)
-    for num in range(back_range[0], back_range[1] + 1):
-        back_counter[num] = max(back_counter.get(num, 0), min_prob)
-
-    # 归一化概率
+    # 计算前区和后区号码的概率
     front_total = sum(front_counter.values())
     back_total = sum(back_counter.values())
+
     front_prob = {num: count / front_total for num, count in front_counter.items()}
     back_prob = {num: count / back_total for num, count in back_counter.items()}
 
     return front_prob, back_prob
 
 
-# 生成号码
-def generate_numbers(probabilities, size, existing, is_front=True):
-    candidates = sorted(probabilities.items(), key=lambda x: -x[1])
-    candidate_nums = [num for num, _ in candidates]
-    candidate_weights = [weight for _, weight in candidates]
+# 生成大乐透号码
+def generate_dlt_numbers(front_prob, back_prob, generated_data, front_range=(1, 35), back_range=(1, 12)):
+    # 读取已生成的大乐透号码
+    existing_numbers = set()
+    for row in generated_data:
+        if not row:  # 跳过空行
+            continue
+        try:
+            if len(row) < 3:
+                raise ValueError(f"数据格式错误：行数据不足 3 个元素，当前行：{row}")
+            front = tuple(row[1].split(','))  # 红球（保留字符串格式）
+            back = tuple(row[2].split(','))   # 篮球（保留字符串格式）
+            existing_numbers.add((front, back))
+        except (IndexError, ValueError) as e:
+            print(f"数据解析错误：{row}，错误信息：{e}")
+            continue  # 跳过错误数据，继续处理下一行
 
-    for _ in range(1000):  # 最大尝试次数
-        selected = sorted(random.choices(candidate_nums, weights=candidate_weights, k=size))
-        if is_front:
-            selected_str = ",".join(f"{n:02d}" for n in selected)
-            if selected_str not in existing:
-                return selected
-        else:
-            if tuple(selected) not in existing:
-                return selected
+    # 生成新号码的逻辑
+    while True:
+        front_numbers = list(front_prob.keys())
+        front_weights = list(front_prob.values())
+        front = random.choices(front_numbers, weights=front_weights, k=5)
+        front = sorted(list(set(front)))
+        if len(front) == 5:
+            front = [f"{num:02d}" for num in front]  # 确保是两位数格式
+            break
 
-    # 如果尝试次数过多，返回随机号码
-    return random.sample(candidate_nums[:size * 2], size)
+    while True:
+        back_numbers = list(back_prob.keys())
+        back_weights = list(back_prob.values())
+        back = random.choices(back_numbers, weights=back_weights, k=2)
+        back = sorted(list(set(back)))
+        if len(back) == 2:
+            back = [f"{num:02d}" for num in back]  # 确保是两位数格式
+            break
+
+    # 检查是否与已生成的号码重复
+    if (tuple(front), tuple(back)) not in existing_numbers:
+        return front, back
+    else:
+        return generate_dlt_numbers(front_prob, back_prob, generated_data, front_range, back_range)
+
+
+# 生成双色球号码
+def generate_ssq_numbers(front_prob, back_prob, generated_data, front_range=(1, 33), back_range=(1, 16)):
+    # 读取已生成的双色球号码
+    existing_numbers = set()
+    for row in generated_data:
+        if not row:  # 跳过空行
+            continue
+        try:
+            if len(row) < 3:
+                raise ValueError(f"数据格式错误：行数据不足 3 个元素，当前行：{row}")
+            front = tuple(row[1].split(','))  # 红球（保留字符串格式）
+            back = tuple(row[2].split(','))   # 篮球（保留字符串格式）
+            existing_numbers.add((front, back))
+        except (IndexError, ValueError) as e:
+            print(f"数据解析错误：{row}，错误信息：{e}")
+            continue  # 跳过错误数据，继续处理下一行
+
+    # 生成新号码的逻辑
+    while True:
+        front_numbers = list(front_prob.keys())
+        front_weights = list(front_prob.values())
+        front = random.choices(front_numbers, weights=front_weights, k=6)
+        front = sorted(list(set(front)))
+        if len(front) == 6:
+            front = [f"{num:02d}" for num in front]  # 确保是两位数格式
+            break
+
+    while True:
+        back_numbers = list(back_prob.keys())
+        back_weights = list(back_prob.values())
+        back = random.choices(back_numbers, weights=back_weights, k=1)
+        back = sorted(list(set(back)))
+        if len(back) == 1:
+            back = [f"{num:02d}" for num in back]  # 确保是两位数格式
+            break
+
+    # 检查是否与已生成的号码重复
+    if (tuple(front), tuple(back)) not in existing_numbers:
+        return front, back
+    else:
+        return generate_ssq_numbers(front_prob, back_prob, generated_data, front_range, back_range)
+
+
+# 生成七星彩号码（基于概率分布，允许前区重复）
+def generate_qxc_numbers(front_prob, back_prob, generated_data):
+    # 读取已生成的七星彩号码
+    existing_numbers = set()
+    for row in generated_data:
+        if not row:  # 跳过空行
+            continue
+        try:
+            if len(row) < 3:
+                raise ValueError(f"数据格式错误：行数据不足 3 个元素，当前行：{row}")
+            front = tuple(map(int, row[1].split(',')))  # 前区
+            back = int(row[2])  # 后区
+            existing_numbers.add((front, back))
+        except (IndexError, ValueError) as e:
+            print(f"数据解析错误：{row}，错误信息：{e}")
+            continue  # 跳过错误数据，继续处理下一行
+
+    # 生成新号码的逻辑
+    while True:
+        front_numbers = list(front_prob.keys())
+        front_weights = list(front_prob.values())
+        front = random.choices(front_numbers, weights=front_weights, k=6)
+        front = tuple(front)  # 转换为元组以便去重检查
+
+        back_numbers = list(back_prob.keys())
+        back_weights = list(back_prob.values())
+        back = random.choices(back_numbers, weights=back_weights, k=1)
+        back = back[0]  # 取第一个元素
+
+        # 检查是否与已生成的号码重复
+        if (front, back) not in existing_numbers:
+            return list(front), back
 
 
 def save_generated_number(lottery_type, results):
@@ -356,16 +447,15 @@ def generate_lottery_numbers(num_results=1, target_year=None):
         front_prob, back_prob = analyze_number_probability(dlt_data, front_range=(1, 35), back_range=(1, 12))
 
         # 读取已生成的大乐透号码
-        existing_front = set()
-        existing_back = set()
-        for row in dlt_data:
-            existing_front.add(tuple(map(int, row[2:-2])))  # 前区号码
-            existing_back.add(tuple(map(int, row[-2:])))  # 后区号码
+        generated_dlt_data = []
+        with open(csv_generated_dlt, 'r', encoding='utf-8') as file:
+            reader = csv.reader(file)
+            next(reader)  # 跳过表头
+            generated_dlt_data = list(reader)
 
         # 生成大乐透号码
         for _ in range(num_results):
-            front = generate_numbers(front_prob, 5, existing_front, is_front=True)
-            back = generate_numbers(back_prob, 2, existing_back, is_front=False)
+            front, back = generate_dlt_numbers(front_prob, back_prob, generated_dlt_data, front_range=(1, 35), back_range=(1, 12))
             results.append(("大乐透", front, back))
         save_generated_number("大乐透", results)
 
@@ -384,16 +474,15 @@ def generate_lottery_numbers(num_results=1, target_year=None):
         front_prob, back_prob = analyze_number_probability(ssq_data, front_range=(1, 33), back_range=(1, 16))
 
         # 读取已生成的双色球号码
-        existing_front = set()
-        existing_back = set()
-        for row in ssq_data:
-            existing_front.add(tuple(map(int, row[2:-2])))  # 前区号码
-            existing_back.add(tuple(map(int, row[-2:])))  # 后区号码
+        generated_ssq_data = []
+        with open(csv_generated_ssq, 'r', encoding='utf-8') as file:
+            reader = csv.reader(file)
+            next(reader)  # 跳过表头
+            generated_ssq_data = list(reader)
 
         # 生成双色球号码
         for _ in range(num_results):
-            front = generate_numbers(front_prob, 6, existing_front, is_front=True)
-            back = generate_numbers(back_prob, 1, existing_back, is_front=False)
+            front, back = generate_ssq_numbers(front_prob, back_prob, generated_ssq_data, front_range=(1, 33), back_range=(1, 16))
             results.append(("双色球", front, back))
         save_generated_number("双色球", results)
 
@@ -412,19 +501,15 @@ def generate_lottery_numbers(num_results=1, target_year=None):
         front_prob, back_prob = analyze_number_probability(qxc_data, front_range=(0, 9), back_range=(0, 14))
 
         # 读取已生成的七星彩号码
-        existing_front = set()
-        existing_back = set()
-        for row in qxc_data:
-            existing_front.add(tuple(map(int, row[2:-2])))  # 前区号码
-            existing_back.add(tuple(map(int, row[-2:])))  # 后区号码
+        generated_qxc_data = []
+        with open(csv_generated_qxc, 'r', encoding='utf-8') as file:
+            reader = csv.reader(file)
+            next(reader)  # 跳过表头
+            generated_qxc_data = list(reader)
 
         # 生成七星彩号码
         for _ in range(num_results):
-            front = generate_numbers(front_prob, 6, existing_front, is_front=True)
-            back = generate_numbers(back_prob, 1, existing_back, is_front=False)
-            # 确保后区号码是单个数字，而不是列表
-            if isinstance(back, list) and len(back) == 1:
-                back = back[0]
+            front, back = generate_qxc_numbers(front_prob, back_prob, generated_qxc_data)
             results.append(("七星彩", front, back))
         save_generated_number("七星彩", results)
 
@@ -457,14 +542,6 @@ def default_result(int_data):
         # 如果排序失败（例如数据格式不正确），直接返回原始结果
         return initial
 
-    # 重新组合为字符串，并去掉七星彩后区的 []
-    formatted_results = []
-    for line in result_lines:
-        if "七星彩" in line:
-            # 去掉后区的 []
-            line = line.replace("[", "").replace("]", "")
-        formatted_results.append(line)
-
     # 重新组合为字符串
-    result = "\n".join(formatted_results)
+    result = "\n".join(result_lines)
     return result
