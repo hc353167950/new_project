@@ -194,26 +194,127 @@ def get_recent_30_data(base_filename, target_year):
 
 # 分析号码概率
 def analyze_number_probability(data, front_range=(1, 35), back_range=(1, 12)):
+    """
+    分析历史数据中号码的概率分布，包括热冷号分析和遗漏值计算。
+    :param data: 历史开奖数据
+    :param front_range: 前区号码范围，如(1, 35)表示1-35
+    :param back_range: 后区号码范围，如(1, 12)表示1-12
+    :return: 前区和后区号码的概率分布
+    """
     # 初始化前区和后区号码的计数器
     front_counter = {num: 0 for num in range(front_range[0], front_range[1] + 1)}
     back_counter = {num: 0 for num in range(back_range[0], back_range[1] + 1)}
-
+    
+    # 初始化遗漏值计数器
+    front_missing = {num: 0 for num in range(front_range[0], front_range[1] + 1)}
+    back_missing = {num: 0 for num in range(back_range[0], back_range[1] + 1)}
+    
+    # 初始化最近10期的热号计数
+    recent_draws = min(10, len(data))  # 最近10期或全部数据（如果少于10期）
+    recent_front_counter = {num: 0 for num in range(front_range[0], front_range[1] + 1)}
+    recent_back_counter = {num: 0 for num in range(back_range[0], back_range[1] + 1)}
+    
     # 统计历史数据中号码的出现次数
-    front_numbers = [int(num) for draw in data for num in draw[2:-2] if front_range[0] <= int(num) <= front_range[1]]
-    back_numbers = [int(num) for draw in data for num in draw[-2:] if back_range[0] <= int(num) <= back_range[1]]
-
-    for num in front_numbers:
-        front_counter[num] += 1
-    for num in back_numbers:
-        back_counter[num] += 1
-
-    # 计算前区和后区号码的概率
-    front_total = sum(front_counter.values())
-    back_total = sum(back_counter.values())
-
-    front_prob = {num: count / front_total for num, count in front_counter.items()}
-    back_prob = {num: count / back_total for num, count in back_counter.items()}
-
+    for i, draw in enumerate(data):
+        # 提取当期前区和后区号码
+        current_front = [int(num) for num in draw[2:-2] if front_range[0] <= int(num) <= front_range[1]]
+        current_back = [int(num) for num in draw[-2:] if back_range[0] <= int(num) <= back_range[1]]
+        
+        # 更新总体计数
+        for num in current_front:
+            front_counter[num] += 1
+        for num in current_back:
+            back_counter[num] += 1
+        
+        # 更新最近10期的热号计数
+        if i < recent_draws:
+            for num in current_front:
+                recent_front_counter[num] += 1
+            for num in current_back:
+                recent_back_counter[num] += 1
+        
+        # 更新遗漏值计数
+        for num in range(front_range[0], front_range[1] + 1):
+            if num in current_front:
+                front_missing[num] = 0  # 当期出现，遗漏值重置为0
+            else:
+                front_missing[num] += 1  # 当期未出现，遗漏值+1
+        
+        for num in range(back_range[0], back_range[1] + 1):
+            if num in current_back:
+                back_missing[num] = 0  # 当期出现，遗漏值重置为0
+            else:
+                back_missing[num] += 1  # 当期未出现，遗漏值+1
+    
+    # 计算基础概率（历史频率）
+    front_total = sum(front_counter.values()) or 1  # 避免除以零
+    back_total = sum(back_counter.values()) or 1
+    front_base_prob = {num: count / front_total for num, count in front_counter.items()}
+    back_base_prob = {num: count / back_total for num, count in back_counter.items()}
+    
+    # 计算热号权重（最近10期的频率）
+    recent_front_total = sum(recent_front_counter.values()) or 1
+    recent_back_total = sum(recent_back_counter.values()) or 1
+    front_hot_weight = {num: count / recent_front_total for num, count in recent_front_counter.items()}
+    back_hot_weight = {num: count / recent_back_total for num, count in recent_back_counter.items()}
+    
+    # 计算遗漏值权重（遗漏越多，权重越大）
+    max_front_missing = max(front_missing.values()) or 1
+    max_back_missing = max(back_missing.values()) or 1
+    front_missing_weight = {num: miss / max_front_missing for num, miss in front_missing.items()}
+    back_missing_weight = {num: miss / max_back_missing for num, miss in back_missing.items()}
+    
+    # 分析号码组合特征（奇偶比例、大小比例）
+    odd_even_ratios = []  # 奇偶比例列表
+    high_low_ratios = []  # 大小比例列表（大：大于等于中间值，小：小于中间值）
+    front_mid = (front_range[0] + front_range[1]) / 2  # 前区中间值
+    
+    for draw in data:
+        current_front = [int(num) for num in draw[2:-2] if front_range[0] <= int(num) <= front_range[1]]
+        
+        # 计算奇偶比例
+        odd_count = sum(1 for num in current_front if num % 2 == 1)  # 奇数个数
+        even_count = len(current_front) - odd_count  # 偶数个数
+        odd_even_ratios.append(odd_count / len(current_front) if len(current_front) > 0 else 0.5)
+        
+        # 计算大小比例
+        high_count = sum(1 for num in current_front if num >= front_mid)  # 大号个数
+        low_count = len(current_front) - high_count  # 小号个数
+        high_low_ratios.append(high_count / len(current_front) if len(current_front) > 0 else 0.5)
+    
+    # 计算平均奇偶比例和大小比例
+    avg_odd_ratio = sum(odd_even_ratios) / len(odd_even_ratios) if odd_even_ratios else 0.5
+    avg_high_ratio = sum(high_low_ratios) / len(high_low_ratios) if high_low_ratios else 0.5
+    
+    # 综合计算最终概率（基础概率 + 热号权重 + 遗漏值权重 + 组合特征调整）
+    front_prob = {}
+    back_prob = {}
+    
+    for num in range(front_range[0], front_range[1] + 1):
+        # 基础概率权重0.5，热号权重0.2，遗漏值权重0.2，组合特征调整0.1
+        base_prob = 0.5 * front_base_prob[num] + 0.2 * front_hot_weight[num] + 0.2 * front_missing_weight[num]
+        
+        # 根据奇偶特征调整概率
+        is_odd = num % 2 == 1
+        odd_adjust = 1.1 if (is_odd and avg_odd_ratio > 0.5) or (not is_odd and avg_odd_ratio < 0.5) else 0.9
+        
+        # 根据大小特征调整概率
+        is_high = num >= front_mid
+        high_adjust = 1.1 if (is_high and avg_high_ratio > 0.5) or (not is_high and avg_high_ratio < 0.5) else 0.9
+        
+        # 应用组合特征调整
+        front_prob[num] = base_prob * (1.0 + 0.1 * (odd_adjust * high_adjust - 1.0))
+    
+    for num in range(back_range[0], back_range[1] + 1):
+        # 后区概率计算（保持原来的权重分配）
+        back_prob[num] = 0.6 * back_base_prob[num] + 0.2 * back_hot_weight[num] + 0.2 * back_missing_weight[num]
+    
+    # 归一化概率分布
+    front_total_prob = sum(front_prob.values())
+    back_total_prob = sum(back_prob.values())
+    front_prob = {num: prob / front_total_prob for num, prob in front_prob.items()}
+    back_prob = {num: prob / back_total_prob for num, prob in back_prob.items()}
+    
     return front_prob, back_prob
 
 
@@ -525,6 +626,14 @@ def generate_lottery_numbers(num_results=1, target_year=None):
         else:
             formatted_results.append(f"{lottery_type} - 红：{', '.join(map(str, front))}  蓝：{', '.join(map(str, back))}")
     return "\n".join(formatted_results)
+
+
+# 如果直接运行脚本，则生成并打印彩票号码
+if __name__ == "__main__":
+    # 生成1注彩票号码
+    result = generate_lottery_numbers(1)
+    print("优化后的概率计算生成的彩票号码：")
+    print(result)
 
 
 def default_result(int_data):
