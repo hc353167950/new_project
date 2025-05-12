@@ -243,8 +243,24 @@ def analyze_number_probability(data, front_range=(1, 35), back_range=(1, 12)):
     
     for i, draw in enumerate(data):
         # 提取当期前区和后区号码
-        current_front = [int(num) for num in draw[2:-2] if front_range[0] <= int(num) <= front_range[1]]
-        current_back = [int(num) for num in draw[-2:] if back_range[0] <= int(num) <= back_range[1]]
+        current_front = []
+        for num in draw[2:-2]:
+            try:
+                num_int = int(num)
+                if front_range[0] <= num_int <= front_range[1]:
+                    current_front.append(num_int)
+            except ValueError:
+                # 跳过无法转换为整数的值（如日期）
+                continue
+        current_back = []
+        for num in draw[-2:]:
+            try:
+                num_int = int(num)
+                if back_range[0] <= num_int <= back_range[1]:
+                    current_back.append(num_int)
+            except ValueError:
+                # 跳过无法转换为整数的值
+                continue
         
         # 提取开奖日期并转换为周几（0-6）
         draw_date = datetime.strptime(draw[1], "%Y-%m-%d")
@@ -347,7 +363,15 @@ def analyze_number_probability(data, front_range=(1, 35), back_range=(1, 12)):
     front_mid = (front_range[0] + front_range[1]) / 2  # 前区中间值
     
     for draw in data:
-        current_front = [int(num) for num in draw[2:-2] if front_range[0] <= int(num) <= front_range[1]]
+        current_front = []
+        for num in draw[2:-2]:
+            try:
+                num_int = int(num)
+                if front_range[0] <= num_int <= front_range[1]:
+                    current_front.append(num_int)
+            except ValueError:
+                # 跳过无法转换为整数的值（如日期）
+                continue
         
         # 计算奇偶比例
         odd_count = sum(1 for num in current_front if num % 2 == 1)  # 奇数个数
@@ -765,13 +789,6 @@ def generate_lottery_numbers(num_results=1, target_year=None):
     return "\n".join(formatted_results)
 
 
-# 如果直接运行脚本，则生成并打印彩票号码
-if __name__ == "__main__":
-    # 生成1注彩票号码
-    result = generate_lottery_numbers(1)
-    print("优化后的概率计算生成的彩票号码：")
-    print(result)
-
 
 def default_result(int_data):
     initial = generate_lottery_numbers(int_data)
@@ -791,3 +808,8 @@ def default_result(int_data):
     # 重新组合为字符串
     result = "\n".join(result_lines)
     return result
+
+if __name__ == "__main__":
+    # 生成并打印结果
+    result = generate_lottery_numbers()
+    print(result)
