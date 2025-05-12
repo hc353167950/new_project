@@ -466,7 +466,7 @@ def analyze_number_probability(data, front_range=(1, 35), back_range=(1, 12)):
     print("\n===== 号码走势分析 =====")
     print(f"基本走势: 前区热门号码: {sorted([num for num, prob in front_base_prob.items() if prob > 1.5/len(front_base_prob)])}")
     print(f"红球走势: 最近遗漏值高的号码: {sorted([num for num, miss in front_missing.items() if miss > 0.7*max_front_missing])}")
-    print(f"篮球走势: 后区热门号码: {sorted([num for num, prob in back_base_prob.items() if prob > 1.5/len(back_base_prob)])}")
+    print(f"篮球走势: 后区热门号码: {sorted([num for num, prob in back_base_prob.items() if prob > 1.0/len(back_base_prob)])}")
     print(f"连号走势: 连号概率较高的起始号码: {sorted([num for num, weight in consecutive_weight.items() if weight > 1.5/len(consecutive_weight)])}")
     print(f"重号走势: 重复出现概率高的号码: {sorted([num for num, weight in repeat_front_weight.items() if weight > 1.5/len(repeat_front_weight)])}")
     print(f"大小走势: 大号比例趋势: {avg_high_ratio:.2f} (>0.5表示大号占优)")
