@@ -195,7 +195,7 @@ def get_recent_30_data(base_filename, target_year):
 # 分析号码概率
 def analyze_number_probability(data, front_range=(1, 35), back_range=(1, 12)):
     """
-    分析历史数据中号码的概率分布，包括热冷号分析和遗漏值计算。
+    分析历史数据中号码的概率分布，包括多维度走势分析。
     :param data: 历史开奖数据
     :param front_range: 前区号码范围，如(1, 35)表示1-35
     :param back_range: 后区号码范围，如(1, 12)表示1-12
@@ -209,24 +209,57 @@ def analyze_number_probability(data, front_range=(1, 35), back_range=(1, 12)):
     front_missing = {num: 0 for num in range(front_range[0], front_range[1] + 1)}
     back_missing = {num: 0 for num in range(back_range[0], back_range[1] + 1)}
     
-    # 初始化最近10期的热号计数
-    recent_draws = min(10, len(data))  # 最近10期或全部数据（如果少于10期）
+    # 初始化最近30期的热号计数（如果历史数据不足30期，则使用所有可用数据）
+    recent_draws = min(30, len(data))  # 最近30期或全部数据（如果少于30期）
     recent_front_counter = {num: 0 for num in range(front_range[0], front_range[1] + 1)}
     recent_back_counter = {num: 0 for num in range(back_range[0], back_range[1] + 1)}
     
+    # 初始化连号统计
+    consecutive_front_counter = {num: 0 for num in range(front_range[0], front_range[1])}  # 统计num和num+1同时出现的次数
+    
+    # 初始化重号统计（上期出现，本期也出现）
+    repeat_front_counter = {num: 0 for num in range(front_range[0], front_range[1] + 1)}
+    repeat_back_counter = {num: 0 for num in range(back_range[0], back_range[1] + 1)}
+    
+    # 初始化质数统计
+    prime_numbers = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31]  # 35以内的质数
+    prime_ratio_list = []  # 每期质数比例
+    
+    # 初始化和值统计
+    sum_values_front = []  # 前区和值列表
+    sum_values_back = []   # 后区和值列表
+    
+    # 初始化跨度统计（最大号码与最小号码的差值）
+    span_values_front = []  # 前区跨度列表
+    
+    # 初始化周期性统计
+    weekday_front_stats = {0: {}, 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {}}  # 按周几统计（0-6对应周一到周日）
+    for day in weekday_front_stats:
+        weekday_front_stats[day] = {num: 0 for num in range(front_range[0], front_range[1] + 1)}
+    
     # 统计历史数据中号码的出现次数
+    prev_front_nums = []  # 上一期前区号码
+    prev_back_nums = []   # 上一期后区号码
+    
     for i, draw in enumerate(data):
         # 提取当期前区和后区号码
         current_front = [int(num) for num in draw[2:-2] if front_range[0] <= int(num) <= front_range[1]]
         current_back = [int(num) for num in draw[-2:] if back_range[0] <= int(num) <= back_range[1]]
         
+        # 提取开奖日期并转换为周几（0-6）
+        draw_date = datetime.strptime(draw[1], "%Y-%m-%d")
+        weekday = draw_date.weekday()
+        
         # 更新总体计数
         for num in current_front:
             front_counter[num] += 1
+            # 更新周几统计
+            weekday_front_stats[weekday][num] += 1
+        
         for num in current_back:
             back_counter[num] += 1
         
-        # 更新最近10期的热号计数
+        # 更新最近30期的热号计数
         if i < recent_draws:
             for num in current_front:
                 recent_front_counter[num] += 1
@@ -245,6 +278,40 @@ def analyze_number_probability(data, front_range=(1, 35), back_range=(1, 12)):
                 back_missing[num] = 0  # 当期出现，遗漏值重置为0
             else:
                 back_missing[num] += 1  # 当期未出现，遗漏值+1
+        
+        # 更新连号统计
+        sorted_front = sorted(current_front)
+        for j in range(len(sorted_front) - 1):
+            if sorted_front[j] + 1 == sorted_front[j + 1]:  # 检测连号
+                consecutive_front_counter[sorted_front[j]] += 1
+        
+        # 更新重号统计
+        if prev_front_nums:
+            for num in current_front:
+                if num in prev_front_nums:
+                    repeat_front_counter[num] += 1
+        
+        if prev_back_nums:
+            for num in current_back:
+                if num in prev_back_nums:
+                    repeat_back_counter[num] += 1
+        
+        # 更新质数比例
+        prime_count = sum(1 for num in current_front if num in prime_numbers)
+        prime_ratio = prime_count / len(current_front) if current_front else 0
+        prime_ratio_list.append(prime_ratio)
+        
+        # 更新和值统计
+        sum_values_front.append(sum(current_front))
+        sum_values_back.append(sum(current_back))
+        
+        # 更新跨度统计
+        if current_front:
+            span_values_front.append(max(current_front) - min(current_front))
+        
+        # 保存当前号码作为下一期的上期号码
+        prev_front_nums = current_front
+        prev_back_nums = current_back
     
     # 计算基础概率（历史频率）
     front_total = sum(front_counter.values()) or 1  # 避免除以零
@@ -252,7 +319,7 @@ def analyze_number_probability(data, front_range=(1, 35), back_range=(1, 12)):
     front_base_prob = {num: count / front_total for num, count in front_counter.items()}
     back_base_prob = {num: count / back_total for num, count in back_counter.items()}
     
-    # 计算热号权重（最近10期的频率）
+    # 计算热号权重（最近30期的频率）
     recent_front_total = sum(recent_front_counter.values()) or 1
     recent_back_total = sum(recent_back_counter.values()) or 1
     front_hot_weight = {num: count / recent_front_total for num, count in recent_front_counter.items()}
@@ -263,6 +330,16 @@ def analyze_number_probability(data, front_range=(1, 35), back_range=(1, 12)):
     max_back_missing = max(back_missing.values()) or 1
     front_missing_weight = {num: miss / max_front_missing for num, miss in front_missing.items()}
     back_missing_weight = {num: miss / max_back_missing for num, miss in back_missing.items()}
+    
+    # 计算连号权重
+    consecutive_total = sum(consecutive_front_counter.values()) or 1
+    consecutive_weight = {num: count / consecutive_total for num, count in consecutive_front_counter.items()}
+    
+    # 计算重号权重
+    repeat_front_total = sum(repeat_front_counter.values()) or 1
+    repeat_back_total = sum(repeat_back_counter.values()) or 1
+    repeat_front_weight = {num: count / repeat_front_total for num, count in repeat_front_counter.items()}
+    repeat_back_weight = {num: count / repeat_back_total for num, count in repeat_back_counter.items()}
     
     # 分析号码组合特征（奇偶比例、大小比例）
     odd_even_ratios = []  # 奇偶比例列表
@@ -286,37 +363,97 @@ def analyze_number_probability(data, front_range=(1, 35), back_range=(1, 12)):
     avg_odd_ratio = sum(odd_even_ratios) / len(odd_even_ratios) if odd_even_ratios else 0.5
     avg_high_ratio = sum(high_low_ratios) / len(high_low_ratios) if high_low_ratios else 0.5
     
-    # 综合计算最终概率（基础概率 + 热号权重 + 遗漏值权重 + 组合特征调整）
+    # 计算平均和值和跨度
+    avg_sum_front = sum(sum_values_front) / len(sum_values_front) if sum_values_front else 0
+    avg_sum_back = sum(sum_values_back) / len(sum_values_back) if sum_values_back else 0
+    avg_span_front = sum(span_values_front) / len(span_values_front) if span_values_front else 0
+    
+    # 计算平均质数比例
+    avg_prime_ratio = sum(prime_ratio_list) / len(prime_ratio_list) if prime_ratio_list else 0.3
+    
+    # 获取当前日期的周几
+    current_weekday = datetime.today().weekday()
+    
+    # 计算周几权重
+    weekday_total = sum(weekday_front_stats[current_weekday].values()) or 1
+    weekday_weight = {num: count / weekday_total for num, count in weekday_front_stats[current_weekday].items()}
+    
+    # 综合计算最终概率（多维度分析）
     front_prob = {}
     back_prob = {}
     
     for num in range(front_range[0], front_range[1] + 1):
-        # 基础概率权重0.5，热号权重0.2，遗漏值权重0.2，组合特征调整0.1
-        base_prob = 0.5 * front_base_prob[num] + 0.2 * front_hot_weight[num] + 0.2 * front_missing_weight[num]
+        # 基础概率权重
+        base_prob = 0.3 * front_base_prob[num]
         
-        # 根据奇偶特征调整概率
+        # 热号权重
+        hot_prob = 0.1 * front_hot_weight[num]
+        
+        # 遗漏值权重
+        missing_prob = 0.1 * front_missing_weight[num]
+        
+        # 连号权重（对num和num-1进行检查）
+        consec_prob = 0.05 * (consecutive_weight.get(num, 0) + consecutive_weight.get(num-1, 0)) / 2 if num > front_range[0] else 0.05 * consecutive_weight.get(num, 0)
+        
+        # 重号权重
+        repeat_prob = 0.05 * repeat_front_weight.get(num, 0)
+        
+        # 奇偶特征调整
         is_odd = num % 2 == 1
         odd_adjust = 1.1 if (is_odd and avg_odd_ratio > 0.5) or (not is_odd and avg_odd_ratio < 0.5) else 0.9
         
-        # 根据大小特征调整概率
+        # 大小特征调整
         is_high = num >= front_mid
         high_adjust = 1.1 if (is_high and avg_high_ratio > 0.5) or (not is_high and avg_high_ratio < 0.5) else 0.9
         
-        # 应用组合特征调整
-        front_prob[num] = base_prob * (1.0 + 0.1 * (odd_adjust * high_adjust - 1.0))
+        # 质合特征调整
+        is_prime = num in prime_numbers
+        prime_adjust = 1.1 if (is_prime and avg_prime_ratio > 0.3) or (not is_prime and avg_prime_ratio < 0.3) else 0.9
+        
+        # 和值与跨度特征调整
+        sum_span_adjust = 1.0  # 默认不调整
+        
+        # 周几特征权重
+        weekday_prob = 0.1 * weekday_weight.get(num, 0)
+        
+        # 组合所有特征
+        feature_adjust = 0.1 * (odd_adjust * high_adjust * prime_adjust * sum_span_adjust - 1.0)
+        
+        # 计算最终概率
+        front_prob[num] = base_prob + hot_prob + missing_prob + consec_prob + repeat_prob + weekday_prob + feature_adjust
     
     for num in range(back_range[0], back_range[1] + 1):
-        # 后区概率计算（保持原来的权重分配）
-        back_prob[num] = 0.6 * back_base_prob[num] + 0.2 * back_hot_weight[num] + 0.2 * back_missing_weight[num]
+        # 后区概率计算（多维度分析）
+        base_prob = 0.4 * back_base_prob[num]
+        hot_prob = 0.2 * back_hot_weight[num]
+        missing_prob = 0.2 * back_missing_weight[num]
+        repeat_prob = 0.1 * repeat_back_weight.get(num, 0)
+        
+        # 计算最终概率
+        back_prob[num] = base_prob + hot_prob + missing_prob + repeat_prob
     
     # 归一化概率分布
-    front_total_prob = sum(front_prob.values())
-    back_total_prob = sum(back_prob.values())
+    front_total_prob = sum(front_prob.values()) or 1
+    back_total_prob = sum(back_prob.values()) or 1
     front_prob = {num: prob / front_total_prob for num, prob in front_prob.items()}
     back_prob = {num: prob / back_total_prob for num, prob in back_prob.items()}
     
+    # 输出分析结果
+    print("\n===== 号码走势分析 =====")
+    print(f"基本走势: 前区热门号码: {sorted([num for num, prob in front_base_prob.items() if prob > 1.5/len(front_base_prob)])}")
+    print(f"红球走势: 最近遗漏值高的号码: {sorted([num for num, miss in front_missing.items() if miss > 0.7*max_front_missing])}")
+    print(f"篮球走势: 后区热门号码: {sorted([num for num, prob in back_base_prob.items() if prob > 1.5/len(back_base_prob)])}")
+    print(f"连号走势: 连号概率较高的起始号码: {sorted([num for num, weight in consecutive_weight.items() if weight > 1.5/len(consecutive_weight)])}")
+    print(f"重号走势: 重复出现概率高的号码: {sorted([num for num, weight in repeat_front_weight.items() if weight > 1.5/len(repeat_front_weight)])}")
+    print(f"大小走势: 大号比例趋势: {avg_high_ratio:.2f} (>0.5表示大号占优)")
+    print(f"奇偶走势: 奇数比例趋势: {avg_odd_ratio:.2f} (>0.5表示奇数占优)")
+    print(f"跨度走势: 平均跨度值: {avg_span_front:.2f}")
+    print(f"和值走势: 前区平均和值: {avg_sum_front:.2f}, 后区平均和值: {avg_sum_back:.2f}")
+    print(f"质合走势: 质数比例趋势: {avg_prime_ratio:.2f} (>0.3表示质数占优)")
+    print(f"周期走势: 今天是周{['一','二','三','四','五','六','日'][current_weekday]}, 历史上这天的热门号码: {sorted([num for num, count in weekday_front_stats[current_weekday].items() if count > 0])[:5]}")
+    print("=====================\n")
+    
     return front_prob, back_prob
-
 
 # 生成大乐透号码
 def generate_dlt_numbers(front_prob, back_prob, generated_data, front_range=(1, 35), back_range=(1, 12)):
