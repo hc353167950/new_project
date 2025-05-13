@@ -262,8 +262,14 @@ def analyze_number_probability(data, front_range=(1, 35), back_range=(1, 12)):
                 # 跳过无法转换为整数的值
                 continue
         
-        # 提取开奖日期并转换为周几（0-6）
-        draw_date = datetime.strptime(draw[1], "%Y-%m-%d")
+        # 提取当期日期
+        date_str = draw[1]
+        # 移除可能的额外内容，只保留YYYY-MM-DD部分
+        if '(' in date_str:  # 处理类似 "2025-01-26(日)" 的格式
+            date_str = date_str.split('(')[0]
+        elif len(date_str) > 10:  # 标准日期格式YYYY-MM-DD长度为10
+            date_str = date_str[:10]
+        draw_date = datetime.strptime(date_str, "%Y-%m-%d")
         weekday = draw_date.weekday()
         
         # 更新总体计数
