@@ -62,8 +62,9 @@ def generate_daily_report():
         # 为每种彩票类型生成标题和内容
         if lottery_data:  # 检查是否有彩票数据
             for lottery_type, data in lottery_data.items():
-                report += f"🎰 已为您生成今日份 {lottery_type} 5注：\n"
+                report += f"🎰 已为您生成今日份 {lottery_type} {len(data)}注：\n"
                 for item in data:
+                    # 确保每注彩票左对齐显示
                     report += f"{item}\n"  # 每注彩票换行
                 report += "\n"  # 每种彩票类型之间添加空行
         else:
