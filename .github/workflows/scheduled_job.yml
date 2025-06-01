@@ -39,9 +39,7 @@ jobs:
         env:
           LAOHUANGLI_API_KEY: ${{ secrets.LAOHUANGLI_API_KEY }}  # 老黄历 API Key
           WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}        # 天气 API Key
-          WXPUSHER_APP_TOKEN: ${{ secrets.WXPUSHER_APP_TOKEN }}  # WxPusher AppToken
-          WXPUSHER_TARGET_TYPE: ${{ secrets.WXPUSHER_TARGET_TYPE }}  # 目标类型（topic 或 uid）
-          WXPUSHER_TARGET_ID: ${{ secrets.WXPUSHER_TARGET_ID }}      # 目标 ID（Topic ID 或 UID）
+          SERVERCHAN_SCKEY: ${{ secrets.SERVERCHAN_SCKEY }}      # Server酱 SCKEY
         run: |
           cd $GITHUB_WORKSPACE  # 切换到工作目录
           for i in {1..3}; do  # 重试 3 次
@@ -73,26 +71,20 @@ jobs:
             git push origin master
           fi
 
-      # 6. 如果脚本执行失败，通过 UID 发送推送通知
-      - name: Send failure notification via UID
+      # 6. 如果脚本执行失败，通过 Server酱 发送推送通知
+      - name: Send failure notification via Server酱
         if: failure()  # 仅在脚本失败时执行
         env:
-          WXPUSHER_APP_TOKEN: ${{ secrets.WXPUSHER_APP_TOKEN }}  # WxPusher AppToken
-          WXPUSHER_UID: ${{ secrets.WXPUSHER_UID }}              # 你的个人 UID
+          SERVERCHAN_SCKEY: ${{ secrets.SERVERCHAN_SCKEY }}  # Server酱 SCKEY
         run: |
           # 使用 curl 发送推送通知
           response=$(curl -X POST \
-            -H "Content-Type: application/json" \
-            -d '{
-              "appToken": "'"$WXPUSHER_APP_TOKEN"'",
-              "content": "Git Daily Report Automation 脚本执行失败，请检查日志。",
-              "contentType": 1,
-              "uids": ["'"$WXPUSHER_UID"'"]
-            }' \
-            https://wxpusher.zjiecode.com/api/send/message)
+            -d "title=GitHub Daily Report Automation 脚本执行失败" \
+            -d "desp=请检查日志。" \
+            https://sctapi.ftqq.com/$SERVERCHAN_SCKEY.send)
 
           # 检查请求是否成功
-          if [[ $response == *"errorCode"* ]]; then
+          if [[ $response == *"errno"* && $response != *"errno":0* ]]; then
             echo "Failed to send notification"
             exit 1
           fi
