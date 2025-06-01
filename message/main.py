@@ -97,46 +97,46 @@ def generate_daily_report():
     return report
 
 
-# 发送消息到微信群或单个用户（通过 WxPusher）
+# 发送消息到微信（通过 Server酱）
 def send_to_wechat(content, target_type, target_id):
-    # 从环境变量中获取 WxPusher AppToken
-    app_token = os.getenv('WXPUSHER_APP_TOKEN')
-
-    # 构造消息体
-    url = "https://wxpusher.zjiecode.com/api/send/message"
-    data = {
-        "appToken": app_token,  # 必传
-        "content": content,  # 必传，HTML 格式
-        "summary": "恭喜发财",  # 消息摘要，显示在微信聊天页面
-        "contentType": 2,  # 2 表示 HTML 格式
-        # "url": "https://wxpusher.zjiecode.com",  # 原文链接，可选
-        "verifyPayType": 0  # 0 表示不验证订阅时间
-    }
-
-    # 根据目标类型设置参数
-    if target_type == "topic":
-        data["topicIds"] = [int(target_id)]  # 发送到 Topic ID，注意是数组
-    elif target_type == "uid":
-        data["uids"] = [target_id]  # 发送到单个用户 UID，注意是数组
-    else:
-        print("无效的目标类型！")
+    # 从环境变量中获取 Server酱 SCKEY
+    sckey = os.getenv('SERVERCHAN_SCKEY')
+    
+    if not sckey:
+        print("错误：未设置SERVERCHAN_SCKEY环境变量！")
         return
-
+    
+    # 构造请求URL和参数
+    url = f"https://sctapi.ftqq.com/{sckey}.send"
+    data = {
+        "title": "每日信息推送",  # 消息标题
+        "desp": content,  # 消息内容，支持HTML格式
+    }
+    
     # 发送请求
-    response = requests.post(url, json=data)
-    if response.status_code == 200:
-        print("消息发送成功！")
-    else:
-        print(f"消息发送失败，状态码：{response.status_code}")
-        print(f"错误信息：{response.text}")  # 打印错误信息
+    try:
+        response = requests.post(url, data=data)
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("code") == 0:
+                print("消息发送成功！")
+            else:
+                print(f"消息发送失败，错误码：{result.get('code')}")
+                print(f"错误信息：{result.get('message')}")
+        else:
+            print(f"消息发送失败，状态码：{response.status_code}")
+            print(f"错误信息：{response.text}")  # 打印错误信息
+    except Exception as e:
+        print(f"发送消息时发生异常：{str(e)}")
+
 
 
 # 生成每日报告
 daily_report = generate_daily_report()
 
-# 选择发送方式
-target_type = os.getenv('WXPUSHER_TARGET_TYPE', 'topic')  # 默认发送到群组
-target_id = os.getenv('WXPUSHER_TARGET_ID')  # 从环境变量中获取 Topic ID 或 UID
+# Server酱不需要target_type和target_id参数，但为了保持函数接口一致，仍然传递这些参数
+target_type = "none"  # 对Server酱来说这个参数不起作用
+target_id = "none"    # 对Server酱来说这个参数不起作用
 
 # 发送消息
 send_to_wechat(daily_report, target_type, target_id)
