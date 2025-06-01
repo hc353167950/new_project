@@ -25,10 +25,10 @@ result_weather = get_weather()
 laohuangli_data = get_laohuangli()
 
 
-# 整合并规范输出为 HTML 格式
+# 整合并规范输出为纯文本格式
 def generate_daily_report():
     # 第一行：今日时间
-    report = f"<h2>📅 今日时间：{today_date}</h2>"
+    report = f"📅 今日时间：{today_date}\n\n"
 
     # 第二行：彩票结果
     if result_lotto:  # 检查是否有彩票数据
@@ -38,7 +38,7 @@ def generate_daily_report():
             # 按行拆分彩票结果
             result_lines = result_lotto.split("\n")
             for lotto in result_lines:
-                # 提取彩票类型（如“双色球”、“大乐透”、“七星彩”）
+                # 提取彩票类型（如"双色球"、"大乐透"、"七星彩"）
                 if " - " in lotto:  # 确保数据包含分隔符
                     lottery_type = lotto.split(" - ")[0]  # 提取彩票类型
                     if lottery_type not in lottery_data:
@@ -48,7 +48,7 @@ def generate_daily_report():
                     print(f"数据格式错误：{lotto}")  # 打印格式错误的数据
         elif isinstance(result_lotto, list):  # 如果返回的是列表
             for lotto in result_lotto:
-                # 提取彩票类型（如“双色球”、“大乐透”、“七星彩”）
+                # 提取彩票类型（如"双色球"、"大乐透"、"七星彩"）
                 if " - " in lotto:  # 确保数据包含分隔符
                     lottery_type = lotto.split(" - ")[0]  # 提取彩票类型
                     if lottery_type not in lottery_data:
@@ -62,37 +62,33 @@ def generate_daily_report():
         # 为每种彩票类型生成标题和内容
         if lottery_data:  # 检查是否有彩票数据
             for lottery_type, data in lottery_data.items():
-                report += f"<h3>🎰 已为您生成今日份 {lottery_type} 5注：</h3>"
-                report += "<pre>"
+                report += f"🎰 已为您生成今日份 {lottery_type} 5注：\n"
                 for item in data:
                     report += f"{item}\n"  # 每注彩票换行
-                report += "</pre>"
+                report += "\n"  # 每种彩票类型之间添加空行
         else:
-            report += "<h3>🎰 今日无彩票数据</h3>"
+            report += "🎰 今日无彩票数据\n\n"
     else:
-        report += "<h3>🎰 今日无彩票数据</h3>"
+        report += "🎰 今日无彩票数据\n\n"
 
     # 第三行：天气结果
     if result_weather:  # 检查是否有天气数据
-        report += "<h3>🌤️ 今日天气：</h3>"
-        report += "<pre>"
+        report += "🌤️ 今日天气：\n"
         if isinstance(result_weather, list):  # 如果天气数据是列表
             for weather in result_weather:
                 report += f"{weather}\n"  # 每个城市的天气换行
         else:
             report += f"{result_weather}\n"  # 如果天气数据是字符串或其他格式
-        report += "</pre>"
+        report += "\n"  # 天气数据后添加空行
 
     # 第四行：老黄历结果
-    report += "<h3>📜 今日老黄历：</h3>"
+    report += "📜 今日老黄历：\n"
     if laohuangli_data:  # 检查是否有老黄历数据
-        report += "<pre>"
         if isinstance(laohuangli_data, dict):  # 如果老黄历数据是字典
             for key, value in laohuangli_data.items():
                 report += f"{key}：{value}\n"  # 每个字段换行
         else:
             report += f"{laohuangli_data}\n"  # 如果老黄历数据是字符串或其他格式
-        report += "</pre>"
 
     return report
 
