@@ -1,141 +1,175 @@
-import sys
 import os
-import requests
+import argparse
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-# 将项目根目录添加到 sys.path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from message.http import make_session
+from message.logger import setup_logger
 
-
+# Import domain functions (assumed to be pure functions or to be migrated)
 from message.almanac import get_laohuangli
 from message.dlt_ssq_script import default_result
 from message.weather import get_weather
-from datetime import datetime
 
+logger = setup_logger(__name__)
 
-# 获取当前日期
-today_date = datetime.now().strftime('%Y-%m-%d')
+def parse_lottery_result(result: Any) -> Dict[str, List[str]]:
+    """
+    Normalize lottery result into a mapping: {lottery_type: [lines...]}
+    Accepts string (lines separated by \n) or list of strings.
+    """
+    lottery_data: Dict[str, List[str]] = {}
 
-# 彩票结果
-result_lotto = default_result(5)
+    if not result:
+        return lottery_data
 
-# 天气结果
-result_weather = get_weather()
+    lines: List[str]
+    if isinstance(result, str):
+        lines = [line.strip() for line in result.splitlines() if line.strip()]
+    elif isinstance(result, list):
+        lines = [str(item).strip() for item in result if str(item).strip()]
+    else:
+        logger.warning("Unknown lottery result type: %s", type(result))
+        return lottery_data
 
-# 老黄历结果
-laohuangli_data = get_laohuangli()
+    for lotto in lines:
+        if " - " in lotto:
+            lottery_type = lotto.split(" - ", 1)[0]
+            lottery_data.setdefault(lottery_type, []).append(lotto)
+        else:
+            logger.warning("Lottery line has unexpected format and will be kept raw: %s", lotto)
+            lottery_data.setdefault("unknown", []).append(lotto)
 
+    return lottery_data
 
-# 整合并规范输出为纯文本格式
-def generate_daily_report():
-    # 第一行：今日时间
+def generate_daily_report(
+    today_date: str,
+    result_lotto: Any,
+    result_weather: Any,
+    laohuangli_data: Any,
+) -> str:
     report = f"📅 今日时间：{today_date}\n\n"
 
-    # 第二行：彩票结果
-    if result_lotto:  # 检查是否有彩票数据
-        # 将彩票结果按类型分组
-        lottery_data = {}
-        if isinstance(result_lotto, str):  # 如果返回的是字符串
-            # 按行拆分彩票结果
-            result_lines = result_lotto.split("\n")
-            for lotto in result_lines:
-                # 提取彩票类型（如"双色球"、"大乐透"、"七星彩"）
-                if " - " in lotto:  # 确保数据包含分隔符
-                    lottery_type = lotto.split(" - ")[0]  # 提取彩票类型
-                    if lottery_type not in lottery_data:
-                        lottery_data[lottery_type] = []
-                    lottery_data[lottery_type].append(lotto)
-                else:
-                    print(f"数据格式错误：{lotto}")  # 打印格式错误的数据
-        elif isinstance(result_lotto, list):  # 如果返回的是列表
-            for lotto in result_lotto:
-                # 提取彩票类型（如"双色球"、"大乐透"、"七星彩"）
-                if " - " in lotto:  # 确保数据包含分隔符
-                    lottery_type = lotto.split(" - ")[0]  # 提取彩票类型
-                    if lottery_type not in lottery_data:
-                        lottery_data[lottery_type] = []
-                    lottery_data[lottery_type].append(lotto)
-                else:
-                    print(f"数据格式错误：{lotto}")  # 打印格式错误的数据
-        else:
-            print(f"未知的彩票结果格式：{type(result_lotto)}")
-
-        # 为每种彩票类型生成标题和内容
-        if lottery_data:  # 检查是否有彩票数据
-            for lottery_type, data in lottery_data.items():
-                report += f"🎰 已为您生成今日份 {lottery_type} {len(data)}注：\n"
-                for item in data:
-                    # 确保每注彩票左对齐显示
-                    report += f"{item}\n"  # 每注彩票换行
-                report += "\n"  # 每种彩票类型之间添加空行
-        else:
-            report += "🎰 今日无彩票数据\n\n"
+    # 彩票部分
+    lottery_data = parse_lottery_result(result_lotto)
+    if lottery_data:
+        for lottery_type, items in lottery_data.items():
+            report += f"🎰 已为您生成今日份 {lottery_type} {len(items)}注：\n"
+            for item in items:
+                report += f"{item}\n"
+            report += "\n"
     else:
         report += "🎰 今日无彩票数据\n\n"
 
-    # 第三行：天气结果
-    if result_weather:  # 检查是否有天气数据
+    # 天气部分
+    if result_weather:
         report += "🌤️ 今日天气：\n"
-        if isinstance(result_weather, list):  # 如果天气数据是列表
-            for weather in result_weather:
-                report += f"{weather}\n"  # 每个城市的天气换行
+        if isinstance(result_weather, list):
+            for w in result_weather:
+                report += f"{w}\n"
         else:
-            report += f"{result_weather}\n"  # 如果天气数据是字符串或其他格式
-        report += "\n"  # 天气数据后添加空行
+            report += f"{result_weather}\n"
+        report += "\n"
 
-    # 第四行：老黄历结果
+    # 老黄历部分
     report += "📜 今日老黄历：\n"
-    if laohuangli_data:  # 检查是否有老黄历数据
-        if isinstance(laohuangli_data, dict):  # 如果老黄历数据是字典
+    if laohuangli_data:
+        if isinstance(laohuangli_data, dict):
             for key, value in laohuangli_data.items():
-                report += f"{key}：{value}\n"  # 每个字段换行
+                report += f"{key}：{value}\n"
         else:
-            report += f"{laohuangli_data}\n"  # 如果老黄历数据是字符串或其他格式
+            report += f"{laohuangli_data}\n"
 
     return report
 
-
-# 发送消息到微信（通过 Server酱）
-def send_to_wechat(content, target_type, target_id):
-    # 从环境变量中获取 Server酱 SCKEY
-    sckey = os.getenv('SERVERCHAN_SCKEY')
-    
+def send_to_wechat(content: str, session=None, timeout: int = 10) -> bool:
+    """
+    Send message via Server酱 (sctapi.ftqq.com). Returns True on success.
+    Uses provided requests.Session (or creates a lightweight one if None).
+    """
+    sckey = os.getenv("SERVERCHAN_SCKEY")
     if not sckey:
-        print("错误：未设置SERVERCHAN_SCKEY环境变量！")
-        return
-    
-    # 构造请求URL和参数
+        logger.error("SERVERCHAN_SCKEY is not set; cannot send message.")
+        return False
+
     url = f"https://sctapi.ftqq.com/{sckey}.send"
-    data = {
-        "title": "每日信息推送",  # 消息标题
-        "desp": content,  # 消息内容，支持HTML格式
-    }
-    
-    # 发送请求
+    data = {"title": "每日信息推送", "desp": content}
+
+    sess = session or make_session()
     try:
-        response = requests.post(url, data=data)
-        if response.status_code == 200:
-            result = response.json()
-            if result.get("code") == 0:
-                print("消息发送成功！")
-            else:
-                print(f"消息发送失败，错误码：{result.get('code')}")
-                print(f"错误信息：{result.get('message')}")
-        else:
-            print(f"消息发送失败，状态码：{response.status_code}")
-            print(f"错误信息：{response.text}")  # 打印错误信息
-    except Exception as e:
-        print(f"发送消息时发生异常：{str(e)}")
+        resp = sess.post(url, data=data, timeout=timeout)
+        resp.raise_for_status()
+    except Exception as exc:
+        logger.exception("Failed to send message to Server酱: %s", exc)
+        return False
 
+    try:
+        payload = resp.json()
+    except Exception:
+        logger.warning("Response is not JSON; status=%s text=%s", resp.status_code, resp.text)
+        return False
 
+    # Server酱 successful response typically contains code == 0
+    if payload.get("code") == 0:
+        logger.info("Message sent successfully.")
+        return True
+    else:
+        logger.error("Server酱 returned error: %s", payload)
+        return False
 
-# 生成每日报告
-daily_report = generate_daily_report()
+def collect_data(count: int, session=None) -> Dict[str, Any]:
+    """
+    Collect data by calling existing functions. Keep wrapper so we can later pass session
+    into the called functions once they accept a session.
+    """
+    logger.debug("Collecting data: count=%s", count)
+    # NOTE: currently default_result, get_weather, get_laohuangli may not accept session;
+    # we call them as-is. Later, refactor those functions to accept session.
+    try:
+        lotto = default_result(count)
+    except Exception:
+        logger.exception("Failed to get lottery result")
+        lotto = None
 
-# Server酱不需要target_type和target_id参数，但为了保持函数接口一致，仍然传递这些参数
-target_type = "none"  # 对Server酱来说这个参数不起作用
-target_id = "none"    # 对Server酱来说这个参数不起作用
+    try:
+        weather = get_weather()
+    except Exception:
+        logger.exception("Failed to get weather")
+        weather = None
 
-# 发送消息
-send_to_wechat(daily_report, target_type, target_id)
+    try:
+        laohuangli = get_laohuangli()
+    except Exception:
+        logger.exception("Failed to get laohuangli")
+        laohuangli = None
 
+    return {"lotto": lotto, "weather": weather, "laohuangli": laohuangli}
 
+def main(argv: Optional[List[str]] = None) -> int:
+    parser = argparse.ArgumentParser(description="生成并推送每日报告（Server酱）")
+    parser.add_argument("--count", "-c", type=int, default=5, help="请求的彩票注数（传给 default_result）")
+    parser.add_argument(
+        "--send",
+        action="store_true",
+        help="将生成的报告发送到 Server酱；默认仅打印到 stdout（便于测试）",
+    )
+    args = parser.parse_args(argv)
+
+    session = make_session()
+    today_date = datetime.now().strftime("%Y-%m-%d")
+
+    data = collect_data(args.count, session=session)
+    report = generate_daily_report(today_date, data["lotto"], data["weather"], data["laohuangli"])\n
+    # 输出报告到 stdout（用于调试/测试）
+    print(report)
+
+    if args.send:
+        success = send_to_wechat(report, session=session)
+        if not success:
+            logger.error("Sending failed.")
+            return 2
+
+    return 0
+
+if __name__ == "__main__":
+    raise SystemExit(main())
